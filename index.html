@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>le chantiau</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Vue.js CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Supabase JS CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="common.js"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <div id="app" class="max-w-7xl mx-auto py-10 px-2">
+      <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">
+        le chantiau
+      </h1>
+      <form
+        @submit.prevent="handleSubmit"
+        class="bg-white rounded-lg shadow-lg p-6 space-y-4"
+      >
+        <div
+          v-if="successMsg"
+          class="bg-green-100 text-green-800 px-4 py-2 rounded mb-2 text-center"
+        >
+          {{ successMsg }}
+        </div>
+        <div
+          v-if="errorMsg"
+          class="bg-red-100 text-red-800 px-4 py-2 rounded mb-2 text-center"
+        >
+          {{ errorMsg }}
+        </div>
+        <div>
+          <label
+            for="customer_name"
+            class="block font-medium text-gray-700 mb-1"
+            >Nom du client</label
+          >
+          <input
+            id="customer_name"
+            v-model="form.customer_name"
+            required
+            type="text"
+            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+          />
+        </div>
+        <div>
+          <label for="email" class="block font-medium text-gray-700 mb-1"
+            >Email</label
+          >
+          <input
+            id="email"
+            v-model="form.email"
+            required
+            type="email"
+            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+          />
+        </div>
+        <div>
+          <label for="phone" class="block font-medium text-gray-700 mb-1"
+            >Numéro de téléphone</label
+          >
+          <input
+            id="phone"
+            v-model="form.phone"
+            required
+            type="text"
+            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+          />
+        </div>
+        <div>
+          <label class="block font-medium text-gray-700 mb-1"
+            >Type de paiement</label
+          >
+          <div class="flex flex-wrap gap-4">
+            <label
+              class="flex items-center cursor-pointer space-x-2 px-3 py-2 border rounded-lg transition hover:border-blue-400"
+              :class="{'border-blue-600 bg-blue-50': form.payment_type==='cash', 'border-gray-300': form.payment_type!=='cash'}"
+            >
+              <input
+                type="radio"
+                name="payment_type"
+                value="cash"
+                v-model="form.payment_type"
+                required
+                class="form-radio text-blue-600 h-5 w-5"
+              />
+              <span>
+                <!-- Cash Icon -->
+                <svg
+                  class="inline h-5 w-5 mr-1 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect
+                    x="2"
+                    y="7"
+                    width="20"
+                    height="10"
+                    rx="2"
+                    fill="#bbf7d0"
+                  />
+                  <circle cx="12" cy="12" r="3" fill="#34d399" />
+                </svg>
+                Espèces
+              </span>
+            </label>
+            <label
+              class="flex items-center cursor-pointer space-x-2 px-3 py-2 border rounded-lg transition hover:border-blue-400"
+              :class="{'border-blue-600 bg-blue-50': form.payment_type==='check', 'border-gray-300': form.payment_type!=='check'}"
+            >
+              <input
+                type="radio"
+                name="payment_type"
+                value="check"
+                v-model="form.payment_type"
+                required
+                class="form-radio text-blue-600 h-5 w-5"
+              />
+              <span>
+                <!-- Check Icon -->
+                <svg
+                  class="inline h-5 w-5 mr-1 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect
+                    x="2"
+                    y="5"
+                    width="20"
+                    height="14"
+                    rx="2"
+                    fill="#dbeafe"
+                  />
+                  <path
+                    d="M6 12l4 4 8-8"
+                    stroke="#2563eb"
+                    stroke-width="2"
+                    fill="none"
+                  />
+                </svg>
+                Chèque
+              </span>
+            </label>
+            <label
+              class="flex items-center cursor-pointer space-x-2 px-3 py-2 border rounded-lg transition hover:border-blue-400"
+              :class="{'border-blue-600 bg-blue-50': form.payment_type==='bank_transfer', 'border-gray-300': form.payment_type!=='bank_transfer'}"
+            >
+              <input
+                type="radio"
+                name="payment_type"
+                value="bank_transfer"
+                v-model="form.payment_type"
+                required
+                class="form-radio text-blue-600 h-5 w-5"
+              />
+              <span>
+                <!-- Bank Icon -->
+                <svg
+                  class="inline h-5 w-5 mr-1 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M3 10v10h18V10"
+                    stroke="#a78bfa"
+                    stroke-width="2"
+                    fill="#ede9fe"
+                  />
+                  <path
+                    d="M12 3l9 7H3l9-7z"
+                    stroke="#8b5cf6"
+                    stroke-width="2"
+                    fill="#ddd6fe"
+                  />
+                </svg>
+                Virement bancaire
+              </span>
+            </label>
+            <label
+              class="flex items-center cursor-pointer space-x-2 px-3 py-2 border rounded-lg transition hover:border-blue-400"
+              :class="{'border-blue-600 bg-blue-50': form.payment_type==='other', 'border-gray-300': form.payment_type!=='other'}"
+            >
+              <input
+                type="radio"
+                name="payment_type"
+                value="other"
+                v-model="form.payment_type"
+                required
+                class="form-radio text-blue-600 h-5 w-5"
+              />
+              <span>
+                <!-- Other Icon -->
+                <svg
+                  class="inline h-5 w-5 mr-1 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" fill="#f3f4f6" />
+                  <path d="M12 16v.01" stroke="#6b7280" stroke-width="2" />
+                  <path
+                    d="M12 8a2 2 0 0 1 2 2c0 1-2 2-2 4"
+                    stroke="#6b7280"
+                    stroke-width="2"
+                    fill="none"
+                  />
+                </svg>
+                Autre
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Delivery Place Selection Per Order Weekday as Radio Buttons -->
+        <div>
+          <h3 class="text-lg font-semibold mb-2 text-gray-700">
+            Lieu de livraison préféré (pour chaque jour de commande)
+          </h3>
+          <p class="text-gray-500 text-sm mb-3">
+            Veuillez sélectionner votre lieu de livraison pour chaque jour de
+            commande disponible. Ces choix seront utilisés pour toutes les
+            semaines.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-for="places, day in DELIVERY_DAY_PLACES" :key="day">
+              <fieldset>
+                <legend class="block font-medium text-gray-700 mb-1">
+                  {{ day }}
+                </legend>
+                <div class="flex flex-col gap-2">
+                  <label
+                    v-for="place in places"
+                    :key="'delivery_' + day"
+                    class="inline-flex items-center"
+                  >
+                    <input
+                      type="radio"
+                      :name="'delivery_' + day"
+                      :value="place"
+                      v-model="form.delivery_places[day]"
+                      :required="cartSumByWeekday(day) > 0"
+                      class="form-radio text-blue-600 h-4 w-4"
+                    />
+                    <span class="ml-2">{{ place }}</span>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-2 text-gray-700">
+            Commandes de boulangerie
+          </h3>
+          <p class="text-gray-500 text-sm mb-4">
+            Indiquez la quantité pour chaque produit à chaque date de commande
+            (laissez à 0 si vous ne commandez pas)
+          </p>
+          <div class="overflow-x-auto">
+            <table
+              class="min-w-full text-xs md:text-sm border border-gray-200 rounded"
+            >
+              <thead>
+                <tr>
+                  <th
+                    class="bg-gray-50 px-2 py-2 sticky left-0 z-10 font-semibold text-gray-700 text-left"
+                  >
+                    Produit
+                  </th>
+                  <th
+                    class="bg-gray-50 px-2 py-2 sticky left-0 z-10 font-semibold text-gray-700 text-left"
+                  >
+                    Taille
+                  </th>
+                  <th
+                    class="bg-gray-50 px-2 py-2 sticky left-0 z-10 font-semibold text-gray-700 text-left"
+                  >
+                    Prix unitaire
+                  </th>
+                  <th
+                    v-for="_, date in form.orders"
+                    :key="date"
+                    :class="{
+                    'bg-red-200 text-red-900 font-bold relative': CLOSED_ORDER_DATES.includes(date),
+                    'bg-gray-50': !CLOSED_ORDER_DATES.includes(date)
+                  }"
+                    class="px-2 py-2 font-semibold text-gray-700 whitespace-nowrap"
+                  >
+                    <div>
+                      <span class="text-gray-400">{{ date }}</span><br />
+                      <span class="text-xs text-gray-500 font-normal"
+                        >{{ WEEK_DAYS[new Date(date).getDay()] }}</span
+                      >
+                    </div>
+                    <div class="mt-1">
+                      <span
+                        class="block text-blue-700 font-semibold text-xs"
+                        v-if="form.delivery_places[WEEK_DAYS[new Date(date).getDay()]]"
+                        >{{ form.delivery_places[WEEK_DAYS[new
+                        Date(date).getDay()]] }}</span
+                      >
+                    </div>
+                    <div
+                      v-if="CLOSED_ORDER_DATES.includes(date)"
+                      class="absolute top-0 left-0 w-full px-2 py-1 bg-red-600 text-white text-xs text-center rounded-b"
+                    >
+                      Fermé
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <template
+                  v-for="(product, productIdx) in PRODUCTS"
+                  :key="product.name"
+                >
+                  <tr
+                    v-for="(item, iIdx) in product.items"
+                    :key="product.name+'-'+item.size"
+                    :class="productIdx % 2 === 0 ? 'bg-gray-50' : 'bg-white'"
+                  >
+                    <template v-if="iIdx === 0">
+                      <td
+                        :rowspan="product.items.length"
+                        :class="productIdx % 2 === 0 ? 'bg-blue-100' : 'bg-blue-50'"
+                        class="text-blue-900 font-bold px-2 py-2 sticky left-0 z-10"
+                      >
+                        {{ product.name }}
+                      </td>
+                    </template>
+                    <td
+                      class="font-medium px-2 py-2 sticky left-0 z-10"
+                      :class="productIdx % 2 === 0 ? 'bg-blue-100' : 'bg-blue-50'"
+                    >
+                      {{ item.size }}
+                    </td>
+                    <td
+                      class="px-2 py-2 text-gray-500 sticky left-0 z-10"
+                      :class="productIdx % 2 === 0 ? 'bg-blue-100' : 'bg-blue-50'"
+                    >
+                      {{ item.price.toFixed(2) }}&nbsp;€
+                    </td>
+                    <td
+                      v-for="_, date in form.orders"
+                      :key="product.name+'-'+item.size+'-'+date"
+                      :class="{
+                        'bg-red-200 text-red-900': CLOSED_ORDER_DATES.includes(date),
+                        'bg-blue-100': productIdx % 2 === 0,
+                        'bg-gray-50': !CLOSED_ORDER_DATES.includes(date)
+                      }"
+                      class="px-1 py-1"
+                    >
+                      <input
+                        type="number"
+                        min="0"
+                        :placeholder="'0'"
+                        class="w-16 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring focus:border-blue-400 text-center"
+                        v-model.number="form.orders[date][product.name][item.size]"
+                        :disabled="CLOSED_ORDER_DATES.includes(date)"
+                      />
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <label for="comments" class="block font-medium text-gray-700 mb-1"
+            >Commentaires</label
+          >
+          <textarea
+            id="comments"
+            v-model="form.comments"
+            rows="4"
+            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+            placeholder="Ajoutez vos commentaires ici..."
+          ></textarea>
+        </div>
+        <div
+          class="flex flex-col md:flex-row items-center justify-center mt-4 gap-4"
+        >
+          <!-- Cart total summary -->
+          <div
+            class="text-lg font-semibold text-gray-700 bg-gray-50 rounded px-4 py-2 shadow border border-gray-200"
+          >
+            Total du panier :
+            <span class="text-blue-700">{{ cartSum.toFixed(2) }} €</span>
+          </div>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="bg-blue-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-blue-700 disabled:opacity-60 transition"
+          >
+            {{ loading ? "Envoi en cours..." : "Valider les commandes" }}
+          </button>
+        </div>
+      </form>
+    </div>
+    <script>
+      const START_DATE = "2025-06-21"; // 21 juin 2025
+      const END_DATE = "2025-09-23"; // 23 septembre 2025
+
+      const { createApp, ref, computed } = Vue;
+
+      createApp({
+        setup() {
+          const supabase = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY
+          );
+
+          const form = ref({
+            customer_name: "",
+            email: "",
+            phone: "",
+            payment_type: "",
+            delivery_places: Object.entries(DELIVERY_DAY_PLACES).map(
+              ([key, val]) => [key, ""]
+            ),
+            orders: getOrderDays(new Date(START_DATE), new Date(END_DATE)).reduce((acc, date) => {
+              acc[date] = PRODUCTS.reduce((obj, product) => {
+                obj[product.name] = product.items.reduce((itemObj, item) => {
+                  itemObj[item.size] = null; // Initialize quantity to 0
+                  return itemObj;
+                }, {});
+                return obj;
+              }, {});
+              return acc;
+            }, {}),
+            comments: "",
+          });
+
+          console.log(form.orders);
+
+          const loading = ref(false);
+          const successMsg = ref("");
+          const errorMsg = ref("");
+
+          const cartSumByWeekday = computed(() => (weekday) => {
+            let sum = 0;
+            for (const day in form.value.orders) {
+              if (WEEK_DAYS[new Date(day).getDay()] !== weekday) {
+                continue; // Skip days that don't match the weekday
+              }
+              for (const productName in form.value.orders[day]) {
+                for (const size in form.value.orders[day][productName]) {
+                  const qty = form.value.orders[day][productName][size] || 0;
+                  const item = PRODUCTS.find(
+                    (p) => p.name === productName
+                  ).items.find((i) => i.size === size);
+                  if (item) {
+                    sum += qty * item.price;
+                  }
+                }
+              }
+            }
+            return sum;
+          });
+          const cartSum = computed(() => {
+            let total = 0;
+            for (const weekday in DELIVERY_DAY_PLACES) {
+              total += cartSumByWeekday.value(weekday);
+            }
+            return total;
+          });
+
+          console.log(form.value);
+
+          async function handleSubmit() {
+            loading.value = true;
+            successMsg.value = "";
+            errorMsg.value = "";
+            try {
+              let insertOrders = [];
+              for (const date in form.value.orders) {
+                if (CLOSED_ORDER_DATES.includes(date)) {
+                  continue; // Skip closed order dates
+                }
+                insertOrder = {
+                  name: form.value.customer_name,
+                  email: form.value.email,
+                  phone: form.value.phone,
+                  payment_type: form.value.payment_type,
+                  comments: form.value.comments,
+                  delivery_date: date,
+                  delivery_place:
+                    form.value.delivery_places[
+                      WEEK_DAYS[new Date(date).getDay()]
+                    ] || "",
+                };
+                delivery_qty = 0;
+                for (const productName in form.value.orders[date]) {
+                  for (const size in form.value.orders[date][productName]) {
+                    qty = form.value.orders[date][productName][size] || 0;
+                    delivery_qty += qty;
+                    insertOrder[`${productName}_${size}_qty`] = qty;
+                  }
+                }
+                if (delivery_qty > 0) {
+                  insertOrders.push(insertOrder);
+                }
+              }
+              if (insertOrders.length === 0) {
+                errorMsg.value =
+                  "Veuillez saisir au moins une quantité supérieure à zéro (pour les jours ouverts).";
+                loading.value = false;
+                return;
+              }
+              const { error } = await supabase
+                .from(TABLE_NAME)
+                .insert(insertOrders);
+              if (error) {
+                errorMsg.value = "Échec de l'envoi : " + error.message;
+              } else {
+                successMsg.value = "Vos commandes ont bien été envoyées !";
+                window.location.href = "/lechantiau/merci.html";
+              }
+            } catch (e) {
+              errorMsg.value = "Erreur inattendue : " + e.message;
+            } finally {
+              loading.value = false;
+            }
+          }
+
+          return {
+            form,
+            loading,
+            handleSubmit,
+            successMsg,
+            errorMsg,
+            cartSumByWeekday,
+            cartSum,
+            CLOSED_ORDER_DATES,
+            WEEK_DAYS,
+            PRODUCTS,
+            DELIVERY_DAY_PLACES,
+          };
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

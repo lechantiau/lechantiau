@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Commandes Boulangerie</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue.js CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <!-- Supabase JS CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="common.js"></script>
+  <!-- <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+</head>
+<body class="bg-gray-200 min-h-screen">
+  <div id="app" class="w-full py-10 px-4">
+    <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Administration - Commandes Boulangerie</h1>
+    
+    <!-- Auth section -->
+    <div v-if="!isAuthenticated" class="max-w-md mx-auto mb-8 bg-white rounded shadow p-6">
+      <h2 class="text-xl font-semibold mb-4 text-center">Connexion administrateur requise</h2>
+      <form @submit.prevent="handleLogin">
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-1">Email</label>
+          <input v-model="authEmail" type="email" required class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400" placeholder="Votre email admin">
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 mb-1">Mot de passe</label>
+          <input v-model="authPassword" type="password" required class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400" placeholder="Mot de passe">
+        </div>
+        <div v-if="authError" class="bg-red-100 text-red-800 px-4 py-2 rounded mb-4 text-center">
+          {{ authError }}
+        </div>
+        <button type="submit" :disabled="authLoading" class="w-full bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition font-semibold">
+          {{ authLoading ? "Connexion..." : "Se connecter" }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Orders Table section -->
+    <div v-else>
+      <div class="flex">
+        <!-- Side panel for date selection -->
+        <div class="w-1/5 bg-white rounded shadow p-4 mr-4">
+          <h2 class="text-lg font-semibold mb-4 text-gray-800">Dates de livraison</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full border border-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2 border-b text-xs md:text-sm">Date</th>
+                  <th class="px-4 py-2 border-b text-xs md:text-sm">Commandes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr 
+                  v-for="date in deliveryDates" 
+                  :key="date.delivery_date" 
+                  class="hover:bg-blue-50 cursor-pointer"
+                  :class="{ 'bg-blue-100': date.delivery_date === filterDate }"
+                  @click="selectDate(date.delivery_date)"
+                >
+                  <td class="px-4 py-2">{{ date.delivery_date }}</td>
+                  <td class="px-4 py-2 text-center">{{ date.count }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="w-4/5">
+          <div class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+            <!-- <div>
+              <label class="block text-gray-700 font-semibold mb-1">Filtrer par nom&nbsp;:</label>
+              <input v-model="filterName" type="text" placeholder="Nom du client..."
+                class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400 w-full md:w-72">
+            </div>
+            <div class="mt-4 md:mt-0">
+              <button @click="fetchOrders" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition font-semibold">
+                Rafraîchir
+              </button>
+            </div> -->
+            <div class="mt-4 md:mt-0">
+              <button @click="exportAsXLSX" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition font-semibold">
+                Exporter en XLSX
+              </button>
+            </div>
+            <div class="mt-4 md:mt-0">
+              <button @click="logout" class="bg-gray-300 text-gray-800 px-4 py-2 rounded shadow hover:bg-gray-400 transition font-semibold">
+                Déconnexion
+              </button>
+            </div>
+          </div>
+          <div v-if="loading" class="flex justify-center items-center my-8">
+            <span class="text-blue-600 font-semibold text-lg">Chargement des commandes...</span>
+          </div>
+          <div v-if="error" class="bg-red-100 text-red-800 px-4 py-2 rounded mb-4 text-center">
+            {{ error }}
+          </div>
+          <div v-if="orders.length > 0" class="overflow-x-auto bg-white rounded shadow">
+            <table class="w-full border border-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">Nom (avec détails)</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Nature</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Multigraine</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Courge</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Cacao</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Petit Epeautre</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Sarrasin Riz</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Figues</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Seigles</th>
+                  <th colspan="3" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Livraison</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Commentaires</th>
+                </tr>
+                <tr>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">Nom</th>
+                  <th class="bg-blue-100 px-2 py-2 border-b text-xs md:text-sm">850g</th>
+                  <th class="bg-blue-100 px-2 py-2 border-b text-xs md:text-sm">430g</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">850g</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">430g</th>
+                  <th class="bg-blue-100 px-2 py-2 border-b text-xs md:text-sm">850g</th>
+                  <th class="bg-blue-100 px-2 py-2 border-b text-xs md:text-sm">430g</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">430g</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">210g</th>
+                  <th class="bg-blue-100 px-2 py-2 border-b text-xs md:text-sm">850g</th>
+                  <th class="bg-blue-100 px-2 py-2 border-b text-xs md:text-sm">430g</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">850g</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">430g</th>
+                  <th class="bg-blue-100 px-2 py-2 border-b text-xs md:text-sm">850g</th>
+                  <th class="bg-blue-100 px-2 py-2 border-b text-xs md:text-sm">430g</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">850g</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">430g</th>
+                  <th class="bg-gray-200 px-2 py-2 border-b text-xs md:text-sm">Lieu</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">Total</th>
+                  <th class="bg-gray-200 px-2 py-2 border-b text-xs md:text-sm">Paiement</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">Commentaires</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="order in orders" :key="order.id" class="border-t hover:bg-blue-50">
+                  <td class="px-2 py-2 relative group">
+                    <div>
+                      <span class="font-semibold">{{ order.name }}</span>
+                      <div class="text-xs text-gray-500">
+                        <p><strong>Email:</strong> {{ order.email }}</p>
+                        <p><strong>Téléphone:</strong> {{ order.phone }}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <template
+                    v-for="(product, productIdx) in PRODUCTS"
+                    :key="product.name"
+                  >
+                    <td 
+                      v-for="(item, iIdx) in product.items"
+                      :key="product.name+'-'+item.size"
+                      class="py-2 text-center"
+                      :class="{
+                        'bg-blue-100': productIdx % 2 === 0,
+                        'text-gray-400': order[product.name+'_'+item.size+'_qty'] === 0
+                      }"
+                      >
+                      {{ order[product.name+'_'+item.size+'_qty'] }}
+                    </td>
+                  </template>
+
+                  <td class="bg-gray-200 py-2">{{ order.delivery_place }}</td>
+                  <td class="px-2 py-2 text-right font-semibold text-blue-700">
+                    {{ costOrder(order).toFixed(2) }} €
+                  </td>
+                  <td class="bg-gray-200 px-2 py-2">{{ order.payment_type }}</td>
+                  <td class="px-2 py-2">{{ order.comments }}</td>
+                </tr>
+                <!-- Sum row -->
+                <tr class="bg-gray-100 font-bold">
+
+                  <td class="px-2 py-2 text-right">Total :</td>
+
+                  <template
+                    v-for="(product, productIdx) in PRODUCTS"
+                    :key="product.name"
+                  >
+                    <td 
+                      v-for="(item, iIdx) in product.items"
+                      :key="product.name+'-'+item.size"
+                      class="py-2 text-center"
+                      :class="{
+                        'bg-blue-100': productIdx % 2 === 0,
+                        'text-gray-400': sumByProduct(product.name, item.size) === 0
+                      }"
+                      >
+                      {{ sumByProduct(product.name, item.size) }}
+                    </td>
+                  </template>
+                  
+                  <td colspan="3" class="bg-gray-200 py-2"></td>
+                  <td colspan="2" class="py-2"></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="mt-4 p-4 border-t text-right text-lg font-bold">
+              Total général affiché : 
+              <span class="text-blue-700">{{ costTotal.toFixed(2) }} €</span>
+            </div>
+          </div>
+          <div v-else-if="!loading" class="text-center text-gray-500 mt-12">Aucune commande à afficher.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const { createApp, ref, computed, onMounted, watch } = Vue;
+
+    createApp({
+      setup() {
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Auth state
+        const isAuthenticated = ref(false);
+        const authEmail = ref('');
+        const authPassword = ref('');
+        const authLoading = ref(false);
+        const authError = ref('');
+        const userSession = ref(null);
+
+        // Orders state
+        const orders = ref([]);
+        const loading = ref(false);
+        const error = ref('');
+        const filterName = ref('');
+        const filterDate = ref(TODAY);
+        const deliveryDates = ref([]);
+
+        // Check for existing session on load
+        onMounted(async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            isAuthenticated.value = true;
+            userSession.value = session;
+            fetchDeliveryDates();
+            fetchOrders();
+          }
+        });
+
+        // Listen to auth state changes (optional for future improvements)
+        supabase.auth.onAuthStateChange((event, session) => {
+          if (session) {
+            isAuthenticated.value = true;
+            userSession.value = session;
+            fetchDeliveryDates();
+            fetchOrders();
+          } else {
+            isAuthenticated.value = false;
+            userSession.value = null;
+            orders.value = [];
+          }
+        });
+
+        async function handleLogin() {
+          authLoading.value = true;
+          authError.value = '';
+          try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email: authEmail.value,
+              password: authPassword.value
+            });
+            if (error) {
+              authError.value = error.message || "Échec de la connexion";
+            } else if (data && data.session) {
+              isAuthenticated.value = true;
+              userSession.value = data.session;
+              fetchOrders();
+            } else {
+              authError.value = "Connexion échouée : aucune session trouvée.";
+            }
+          } catch (e) {
+            authError.value = e.message || "Erreur inattendue";
+          } finally {
+            authPassword.value = ''; // Clear password after attempt
+            authLoading.value = false;
+          }
+        }
+
+        async function logout() {
+          await supabase.auth.signOut();
+          isAuthenticated.value = false;
+          userSession.value = null;
+          authEmail.value = '';
+          authPassword.value = '';
+          orders.value = [];
+        }
+
+        async function fetchOrders() {
+          loading.value = true;
+          error.value = '';
+          try {
+            // Get latest session/access token (on each call)
+            const { data: { session } } = await supabase.auth.getSession();
+
+            const { data, error: err } = await supabase
+              .from(TABLE_NAME)
+              .select('*')
+              // .ilike('name', '%'+filterName.value+'%')
+              .eq('delivery_date', filterDate.value)
+              .order('name', { ascending: true });
+            if (err) {
+              error.value = "Erreur lors du chargement : " + err.message;
+              orders.value = [];
+            } else {
+              orders.value = data || [];
+            }
+          } catch (e) {
+            error.value = "Erreur inattendue : " + e.message;
+            orders.value = [];
+          } finally {
+            loading.value = false;
+          }
+        }
+
+        async function fetchDeliveryDates() {
+          try {
+            // Get latest session/access token (on each call)
+            const { data: { session } } = await supabase.auth.getSession();
+
+            const { data, error } = await supabase
+              .from(TABLE_NAME)
+              .select('delivery_date, id.count()')
+              .order('delivery_date', { ascending: true });
+
+            if (error) {
+              console.error("Erreur lors du chargement des dates de livraison :", error.message);
+              deliveryDates.value = [];
+            } else {
+              deliveryDates.value = data || [];
+            }
+          } catch (e) {
+            console.error("Erreur inattendue :", e.message);
+            deliveryDates.value = [];
+          }
+        }
+
+        async function exportAsXLSX() {
+          qty_rab_row_nb = 2+orders.value.length+1;
+          price_row_nb = 2+orders.value.length+4;
+          masse_paton_kg_row_nb = 2+orders.value.length+5;
+          qty_det_row_nb = 2+orders.value.length+6;
+          rows = [
+            [{f: 'COUNTIF(A3:A'+(2+orders.value.length)+',"<>0")'}, filterDate.value, 'Nature', '', '', '', '', 'Multigraine', '', '', '', '', 'Courge', '', '', '', '', 'Cacao', '', '', '', '', 'Petit Epeautre', '', '', '', '', 'Sarrasin Riz', '', '', '', '', 'Figues', '', '', '', '', 'Seigles', '', '', '', ''],
+            [{f: "A"+price_row_nb+"/A1"}, 'Client', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '430g', '', '210g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', ''],
+          ]
+          for (const order in orders.value) {
+            order_row_nb = 2 + parseInt(order) + 1;
+            const orderData = orders.value[order];
+            rows.push([
+              {f: "SUMPRODUCT(C"+order_row_nb+":AO"+order_row_nb+",C$"+price_row_nb+":AO$"+price_row_nb+")"},
+              // {v: orderData.name, c: orderData.comments ? [{ a: orderData.name, t: orderData.comments }] : []},
+              orderData.name,
+              orderData.Nature_850g_qty > 0 ? orderData.Nature_850g_qty : '', '',
+              orderData.Nature_430g_qty > 0 ? orderData.Nature_430g_qty : '', '','', 
+              orderData.Multigraine_850g_qty > 0 ? orderData.Multigraine_850g_qty : '', '',
+              orderData.Multigraine_430g_qty > 0 ? orderData.Multigraine_430g_qty : '', '','', 
+              orderData.Courge_850g_qty > 0 ? orderData.Courge_850g_qty : '', '',
+              orderData.Courge_430g_qty > 0 ? orderData.Courge_430g_qty : '', '','', 
+              orderData.Cacao_430g_qty > 0 ? orderData.Cacao_430g_qty : '', '',
+              orderData.Cacao_210g_qty > 0 ? orderData.Cacao_210g_qty : '', '','', 
+              orderData['Petit Epeautre_850g_qty'] > 0 ? orderData['Petit Epeautre_850g_qty'] : '', '',
+              orderData['Petit Epeautre_430g_qty'] > 0 ? orderData['Petit Epeautre_430g_qty'] : '', '','', 
+              orderData['Sarrasin Riz_850g_qty'] > 0 ? orderData['Sarrasin Riz_850g_qty'] : '', '',
+              orderData['Sarrasin Riz_430g_qty'] > 0 ? orderData['Sarrasin Riz_430g_qty'] : '', '','', 
+              orderData.Figues_850g_qty > 0 ? orderData.Figues_850g_qty : '', '',
+              orderData.Figues_430g_qty > 0 ? orderData.Figues_430g_qty : '', '','', 
+              orderData.Seigles_850g_qty > 0 ? orderData.Seigles_850g_qty : '', '',
+              orderData.Seigles_430g_qty > 0 ? orderData.Seigles_430g_qty : '', '','',
+            ]);
+          }
+          rows.push([
+            {f: "SUMPRODUCT(C"+qty_rab_row_nb+":AO"+qty_rab_row_nb+",C$"+price_row_nb+":AO$"+price_row_nb+")"},
+            'RAB',
+              1, '',
+              1, '','', 
+              1, '',
+              1, '','', 
+              1, '',
+              1, '','', 
+              1, '',
+              1, '','', 
+              1, '',
+              1, '','', 
+              1, '',
+              1, '','', 
+              1, '',
+              1, '','', 
+              1, '',
+              1, '','',
+          ]);
+          rows.push([
+            '',
+            'Kg pate RAB',
+            {f: "SUMPRODUCT(C"+qty_rab_row_nb+":AO"+qty_rab_row_nb+",C"+masse_paton_kg_row_nb+":AO"+masse_paton_kg_row_nb+")"},
+          ]);
+          rows.push(
+            ['', 'Type de pain', 'Nature', '', '', '', '', 'Multigraine', '', '', '', '', 'Courge', '', '', '', '', 'Cacao', '', '', '', '', 'Petit Epeautre', '', '', '', '', 'Sarrasin Riz', '', '', '', '', 'Figues', '', '', '', '', 'Seigles', '', '', '', ''],
+          )
+          rows.push([
+            {f: "A"+qty_det_row_nb+"-A"+qty_rab_row_nb},
+            'Prix pains',
+            PRODUCTS.find( (p) => p.name === "Nature" ).items.find((i) => i.size === "850g").price, '',
+            PRODUCTS.find( (p) => p.name === "Nature" ).items.find((i) => i.size === "430g").price, '','', 
+            PRODUCTS.find( (p) => p.name === "Multigraine" ).items.find((i) => i.size === "850g").price, '',
+            PRODUCTS.find( (p) => p.name === "Multigraine" ).items.find((i) => i.size === "430g").price, '','', 
+            PRODUCTS.find( (p) => p.name === "Courge" ).items.find((i) => i.size === "850g").price, '',
+            PRODUCTS.find( (p) => p.name === "Courge" ).items.find((i) => i.size === "430g").price, '','', 
+            PRODUCTS.find( (p) => p.name === "Cacao" ).items.find((i) => i.size === "430g").price, '',
+            PRODUCTS.find( (p) => p.name === "Cacao" ).items.find((i) => i.size === "210g").price, '','', 
+            PRODUCTS.find( (p) => p.name === "Petit Epeautre" ).items.find((i) => i.size === "850g").price, '',
+            PRODUCTS.find( (p) => p.name === "Petit Epeautre" ).items.find((i) => i.size === "430g").price, '','', 
+            PRODUCTS.find( (p) => p.name === "Sarrasin Riz" ).items.find((i) => i.size === "850g").price, '',
+            PRODUCTS.find( (p) => p.name === "Sarrasin Riz" ).items.find((i) => i.size === "430g").price, '','', 
+            PRODUCTS.find( (p) => p.name === "Figues" ).items.find((i) => i.size === "850g").price, '',
+            PRODUCTS.find( (p) => p.name === "Figues" ).items.find((i) => i.size === "430g").price, '','', 
+            PRODUCTS.find( (p) => p.name === "Seigles" ).items.find((i) => i.size === "850g").price, '',
+            PRODUCTS.find( (p) => p.name === "Seigles" ).items.find((i) => i.size === "430g").price, '','',
+          ]);
+          rows.push([
+            {f: "(A"+qty_det_row_nb+"+A"+price_row_nb+")/2"},
+            'Masse paton kg pains',
+              1, '',
+              0.5, '','', 
+              1, '',
+              0.5, '','', 
+              1, '',
+              0.5, '','', 
+              0.5, '',
+              0.25, '','', 
+              1, '',
+              0.5, '','', 
+              1, '',
+              0.5, '','', 
+              1, '',
+              0.5, '','', 
+              1, '',
+              0.5, '','',
+          ]);
+          rows.push([
+            {f: "SUMPRODUCT(C"+qty_det_row_nb+":AO"+qty_det_row_nb+",C$"+price_row_nb+":AO$"+price_row_nb+")"},
+            'Qté DET',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 2})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 2})+")"}, '',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 4})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 4})+")"}, '','', 
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 7})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 7})+")"}, '',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 9})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 9})+")"}, '','', 
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 12})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 12})+")"}, '',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 14})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 14})+")"}, '','', 
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 17})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 17})+")"}, '',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 19})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 19})+")"}, '','', 
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 22})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 22})+")"}, '',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 24})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 24})+")"}, '','', 
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 27})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 27})+")"}, '',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 29})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 29})+")"}, '','', 
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 32})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 32})+")"}, '',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 34})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 34})+")"}, '','', 
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 37})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 37})+")"}, '',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 39})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 39})+")"}, '','',
+          ]);
+          rows.push([
+            '',
+            'Kg pate',
+            {f: "SUMPRODUCT(C"+qty_det_row_nb+":F"+qty_det_row_nb+",C"+masse_paton_kg_row_nb+":F"+masse_paton_kg_row_nb+")"}, '', '', '','', 
+            {f: "SUMPRODUCT(H"+qty_det_row_nb+":K"+qty_det_row_nb+",H"+masse_paton_kg_row_nb+":K"+masse_paton_kg_row_nb+")"}, '', '', '','', 
+            {f: "SUMPRODUCT(M"+qty_det_row_nb+":P"+qty_det_row_nb+",M"+masse_paton_kg_row_nb+":P"+masse_paton_kg_row_nb+")"}, '', '', '','', 
+            {f: "SUMPRODUCT(R"+qty_det_row_nb+":U"+qty_det_row_nb+",R"+masse_paton_kg_row_nb+":U"+masse_paton_kg_row_nb+")"}, '', '', '','', 
+            {f: "SUMPRODUCT(W"+qty_det_row_nb+":Z"+qty_det_row_nb+",W"+masse_paton_kg_row_nb+":Z"+masse_paton_kg_row_nb+")"}, '', '', '','', 
+            {f: "SUMPRODUCT(AB"+qty_det_row_nb+":AE"+qty_det_row_nb+",AB"+masse_paton_kg_row_nb+":AE"+masse_paton_kg_row_nb+")"}, '', '', '','', 
+            {f: "SUMPRODUCT(AG"+qty_det_row_nb+":AJ"+qty_det_row_nb+",AG"+masse_paton_kg_row_nb+":AJ"+masse_paton_kg_row_nb+")"}, '', '', '','', 
+            {f: "SUMPRODUCT(AL"+qty_det_row_nb+":AO"+qty_det_row_nb+",AL"+masse_paton_kg_row_nb+":AO"+masse_paton_kg_row_nb+")"}, '', '', '','', 
+          ]);
+          rows.push([
+            '',
+            'Kg pate to',
+            {f: "SUMPRODUCT(C"+qty_det_row_nb+":AO"+qty_det_row_nb+",C"+masse_paton_kg_row_nb+":AO"+masse_paton_kg_row_nb+")"},
+          ]);
+          const ws = XLSX.utils.aoa_to_sheet(rows);
+
+          dotted = { style: 'dotted', color: { rgb: 'FF000000' } }
+          for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+            for (let colIndex = 0; colIndex < rows[rowIndex].length; colIndex++) {
+              if (colIndex === 0) {
+                b = {}
+              } else if (colIndex === 1) {
+                b = {top: dotted, bottom: dotted, left: dotted, right: dotted}
+              } else if (((colIndex - 2) % 5 == 0) || ((colIndex - 2) % 5 == 2)) {
+                b = {top: dotted, bottom: dotted, left: dotted} // the first column of each product
+              } else if (((colIndex - 2) % 5 == 1) || ((colIndex - 3) % 5 == 2)) {
+                b = {top: dotted, bottom: dotted, right: dotted}
+              } else if ((colIndex - 2) % 5 == 4) {
+                b = {top: dotted, bottom: dotted, left: dotted, right: dotted}
+              } else {
+                b = {}
+              }
+
+              const addr = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
+              ws[addr] = ws[addr] || { v: '' };
+              ws[addr].s = {
+                  border: b,
+                  alignment: {
+                    horizontal: 'center',
+                    vertical: 'center',
+                    wrapText: false
+                  }
+              };
+            }
+          }
+
+          ws['!merges'] = [
+            { s: { r: 0, c: 2 }, e: { r: 0, c: 5 } },
+            { s: { r: 0, c: 7 }, e: { r: 0, c: 10 } },
+            { s: { r: 0, c: 12 }, e: { r: 0, c: 15 } },
+            { s: { r: 0, c: 17 }, e: { r: 0, c: 20 } },
+            { s: { r: 0, c: 22 }, e: { r: 0, c: 25 } },
+            { s: { r: 0, c: 27 }, e: { r: 0, c: 30 } },
+            { s: { r: 0, c: 32 }, e: { r: 0, c: 35 } },
+            { s: { r: 0, c: 37 }, e: { r: 0, c: 40 } },
+            { s: { r: 1, c: 2 }, e: { r: 1, c: 3 } }, { s: { r: 1, c: 4 }, e: { r: 1, c: 5 } },
+            { s: { r: 1, c: 7 }, e: { r: 1, c: 8 } }, { s: { r: 1, c: 9 }, e: { r: 1, c: 10 } },
+            { s: { r: 1, c: 12 }, e: { r: 1, c: 13 } }, { s: { r: 1, c: 14 }, e: { r: 1, c: 15 } },
+            { s: { r: 1, c: 17 }, e: { r: 1, c: 18 } }, { s: { r: 1, c: 19 }, e: { r: 1, c: 20 } },
+            { s: { r: 1, c: 22 }, e: { r: 1, c: 23 } }, { s: { r: 1, c: 24 }, e: { r: 1, c: 25 } },
+            { s: { r: 1, c: 27 }, e: { r: 1, c: 28 } }, { s: { r: 1, c: 29 }, e: { r: 1, c: 30 } },
+            { s: { r: 1, c: 32 }, e: { r: 1, c: 33 } }, { s: { r: 1, c: 34 }, e: { r: 1, c: 35 } },
+            { s: { r: 1, c: 37 }, e: { r: 1, c: 38 } }, { s: { r: 1, c: 39 }, e: { r: 1, c: 40 } },
+            { s: { r: 2+orders.value.length, c: 2 }, e: { r: 2+orders.value.length, c: 3 } }, { s: { r: 2+orders.value.length, c: 4 }, e: { r: 2+orders.value.length, c: 5 } },
+            { s: { r: 2+orders.value.length, c: 7 }, e: { r: 2+orders.value.length, c: 8 } }, { s: { r: 2+orders.value.length, c: 9 }, e: { r: 2+orders.value.length, c: 10 } },
+            { s: { r: 2+orders.value.length, c: 12 }, e: { r: 2+orders.value.length, c: 13 } }, { s: { r: 2+orders.value.length, c: 14 }, e: { r: 2+orders.value.length, c: 15 } },
+            { s: { r: 2+orders.value.length, c: 17 }, e: { r: 2+orders.value.length, c: 18 } }, { s: { r: 2+orders.value.length, c: 19 }, e: { r: 2+orders.value.length, c: 20 } },
+            { s: { r: 2+orders.value.length, c: 22 }, e: { r: 2+orders.value.length, c: 23 } }, { s: { r: 2+orders.value.length, c: 24 }, e: { r: 2+orders.value.length, c: 25 } },
+            { s: { r: 2+orders.value.length, c: 27 }, e: { r: 2+orders.value.length, c: 28 } }, { s: { r: 2+orders.value.length, c: 29 }, e: { r: 2+orders.value.length, c: 30 } },
+            { s: { r: 2+orders.value.length, c: 32 }, e: { r: 2+orders.value.length, c: 33 } }, { s: { r: 2+orders.value.length, c: 34 }, e: { r: 2+orders.value.length, c: 35 } },
+            { s: { r: 2+orders.value.length, c: 37 }, e: { r: 2+orders.value.length, c: 38 } }, { s: { r: 2+orders.value.length, c: 39 }, e: { r: 2+orders.value.length, c: 40 } },
+            { s: { r: 3+orders.value.length, c: 2 }, e: { r: 3+orders.value.length, c: 40 } },
+            { s: { r: 4+orders.value.length, c: 2 }, e: { r: 4+orders.value.length, c: 5 } },
+            { s: { r: 4+orders.value.length, c: 7 }, e: { r: 4+orders.value.length, c: 10 } },
+            { s: { r: 4+orders.value.length, c: 12 }, e: { r: 4+orders.value.length, c: 15 } },
+            { s: { r: 4+orders.value.length, c: 17 }, e: { r: 4+orders.value.length, c: 20 } },
+            { s: { r: 4+orders.value.length, c: 22 }, e: { r: 4+orders.value.length, c: 25 } },
+            { s: { r: 4+orders.value.length, c: 27 }, e: { r: 4+orders.value.length, c: 30 } },
+            { s: { r: 4+orders.value.length, c: 32 }, e: { r: 4+orders.value.length, c: 35 } },
+            { s: { r: 4+orders.value.length, c: 37 }, e: { r: 4+orders.value.length, c: 40 } },
+            { s: { r: 5+orders.value.length, c: 2 }, e: { r: 5+orders.value.length, c: 3 } }, { s: { r: 5+orders.value.length, c: 4 }, e: { r: 5+orders.value.length, c: 5 } },
+            { s: { r: 5+orders.value.length, c: 7 }, e: { r: 5+orders.value.length, c: 8 } }, { s: { r: 5+orders.value.length, c: 9 }, e: { r: 5+orders.value.length, c: 10 } },
+            { s: { r: 5+orders.value.length, c: 12 }, e: { r: 5+orders.value.length, c: 13 } }, { s: { r: 5+orders.value.length, c: 14 }, e: { r: 5+orders.value.length, c: 15 } },
+            { s: { r: 5+orders.value.length, c: 17 }, e: { r: 5+orders.value.length, c: 18 } }, { s: { r: 5+orders.value.length, c: 19 }, e: { r: 5+orders.value.length, c: 20 } },
+            { s: { r: 5+orders.value.length, c: 22 }, e: { r: 5+orders.value.length, c: 23 } }, { s: { r: 5+orders.value.length, c: 24 }, e: { r: 5+orders.value.length, c: 25 } },
+            { s: { r: 5+orders.value.length, c: 27 }, e: { r: 5+orders.value.length, c: 28 } }, { s: { r: 5+orders.value.length, c: 29 }, e: { r: 5+orders.value.length, c: 30 } },
+            { s: { r: 5+orders.value.length, c: 32 }, e: { r: 5+orders.value.length, c: 33 } }, { s: { r: 5+orders.value.length, c: 34 }, e: { r: 5+orders.value.length, c: 35 } },
+            { s: { r: 5+orders.value.length, c: 37 }, e: { r: 5+orders.value.length, c: 38 } }, { s: { r: 5+orders.value.length, c: 39 }, e: { r: 5+orders.value.length, c: 40 } },
+            { s: { r: 6+orders.value.length, c: 2 }, e: { r: 6+orders.value.length, c: 3 } }, { s: { r: 6+orders.value.length, c: 4 }, e: { r: 6+orders.value.length, c: 5 } },
+            { s: { r: 6+orders.value.length, c: 7 }, e: { r: 6+orders.value.length, c: 8 } }, { s: { r: 6+orders.value.length, c: 9 }, e: { r: 6+orders.value.length, c: 10 } },
+            { s: { r: 6+orders.value.length, c: 12 }, e: { r: 6+orders.value.length, c: 13 } }, { s: { r: 6+orders.value.length, c: 14 }, e: { r: 6+orders.value.length, c: 15 } },
+            { s: { r: 6+orders.value.length, c: 17 }, e: { r: 6+orders.value.length, c: 18 } }, { s: { r: 6+orders.value.length, c: 19 }, e: { r: 6+orders.value.length, c: 20 } },
+            { s: { r: 6+orders.value.length, c: 22 }, e: { r: 6+orders.value.length, c: 23 } }, { s: { r: 6+orders.value.length, c: 24 }, e: { r: 6+orders.value.length, c: 25 } },
+            { s: { r: 6+orders.value.length, c: 27 }, e: { r: 6+orders.value.length, c: 28 } }, { s: { r: 6+orders.value.length, c: 29 }, e: { r: 6+orders.value.length, c: 30 } },
+            { s: { r: 6+orders.value.length, c: 32 }, e: { r: 6+orders.value.length, c: 33 } }, { s: { r: 6+orders.value.length, c: 34 }, e: { r: 6+orders.value.length, c: 35 } },
+            { s: { r: 6+orders.value.length, c: 37 }, e: { r: 6+orders.value.length, c: 38 } }, { s: { r: 6+orders.value.length, c: 39 }, e: { r: 6+orders.value.length, c: 40 } },
+            { s: { r: 7+orders.value.length, c: 2 }, e: { r: 7+orders.value.length, c: 3 } }, { s: { r: 7+orders.value.length, c: 4 }, e: { r: 7+orders.value.length, c: 5 } },
+            { s: { r: 7+orders.value.length, c: 7 }, e: { r: 7+orders.value.length, c: 8 } }, { s: { r: 7+orders.value.length, c: 9 }, e: { r: 7+orders.value.length, c: 10 } },
+            { s: { r: 7+orders.value.length, c: 12 }, e: { r: 7+orders.value.length, c: 13 } }, { s: { r: 7+orders.value.length, c: 14 }, e: { r: 7+orders.value.length, c: 15 } },
+            { s: { r: 7+orders.value.length, c: 17 }, e: { r: 7+orders.value.length, c: 18 } }, { s: { r: 7+orders.value.length, c: 19 }, e: { r: 7+orders.value.length, c: 20 } },
+            { s: { r: 7+orders.value.length, c: 22 }, e: { r: 7+orders.value.length, c: 23 } }, { s: { r: 7+orders.value.length, c: 24 }, e: { r: 7+orders.value.length, c: 25 } },
+            { s: { r: 7+orders.value.length, c: 27 }, e: { r: 7+orders.value.length, c: 28 } }, { s: { r: 7+orders.value.length, c: 29 }, e: { r: 7+orders.value.length, c: 30 } },
+            { s: { r: 7+orders.value.length, c: 32 }, e: { r: 7+orders.value.length, c: 33 } }, { s: { r: 7+orders.value.length, c: 34 }, e: { r: 7+orders.value.length, c: 35 } },
+            { s: { r: 7+orders.value.length, c: 37 }, e: { r: 7+orders.value.length, c: 38 } }, { s: { r: 7+orders.value.length, c: 39 }, e: { r: 7+orders.value.length, c: 40 } },
+            { s: { r: 8+orders.value.length, c: 2 }, e: { r: 8+orders.value.length, c: 5 } },
+            { s: { r: 8+orders.value.length, c: 7 }, e: { r: 8+orders.value.length, c: 10 } },
+            { s: { r: 8+orders.value.length, c: 12 }, e: { r: 8+orders.value.length, c: 15 } },
+            { s: { r: 8+orders.value.length, c: 17 }, e: { r: 8+orders.value.length, c: 20 } },
+            { s: { r: 8+orders.value.length, c: 22 }, e: { r: 8+orders.value.length, c: 25 } },
+            { s: { r: 8+orders.value.length, c: 27 }, e: { r: 8+orders.value.length, c: 30 } },
+            { s: { r: 8+orders.value.length, c: 32 }, e: { r: 8+orders.value.length, c: 35 } },
+            { s: { r: 8+orders.value.length, c: 37 }, e: { r: 8+orders.value.length, c: 40 } },
+            { s: { r: 9+orders.value.length, c: 2 }, e: { r: 9+orders.value.length, c: 40 } },
+          ];
+          ws['!cols'] = [
+          {wch: 10},
+          {wch: 15},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 0.1},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 0.1},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 0.1},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 0.1},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 0.1},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 0.1},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 0.1},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 0.1},
+          ]
+
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, filterDate.value);
+
+          XLSX.writeFile(wb, `lechantiau-${filterDate.value}.xlsx`);
+        }
+
+        function selectDate(date) {
+          filterDate.value = date;
+          fetchOrders();
+        }
+
+        sumByProduct = computed(() => (productName, size) => {
+          return orders.value.reduce((sum, order) => {
+            return sum + (order[`${productName}_${size}_qty`] || 0);
+          }, 0);
+        });
+        costOrder = computed(() => (order) => {
+          let total = 0;
+          for (const product of PRODUCTS) {
+            for (const item of product.items) {
+              total += (order[`${product.name}_${item.size}_qty`] || 0) * item.price;
+            }
+          }
+          return total;
+        });
+        costTotal = computed(() => {
+          return orders.value.reduce((total, order) => total + costOrder.value(order), 0);
+        });
+
+        return {
+          // Auth
+          isAuthenticated,
+          authEmail,
+          authPassword,
+          authLoading,
+          authError,
+          handleLogin,
+          logout,
+          // Orders/table
+          orders,
+          loading,
+          error,
+          fetchOrders,
+          // filterName,
+          filterDate,
+          exportAsXLSX,
+          deliveryDates,
+          fetchDeliveryDates,
+          selectDate,
+          PRODUCTS,
+          costOrder,
+          sumByProduct,
+          costTotal
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
