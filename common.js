@@ -46,24 +46,9 @@ const PRODUCTS = [
       { size: "430g", price: 3.8 },
     ],
   },
-  {
-    name: "Figues",
-    items: [
-      { size: "850g", price: 7.2 },
-      { size: "430g", price: 3.8 },
-    ],
-  },
-  {
-    name: "Seigles",
-    items: [
-      { size: "850g", price: 7.2 },
-      { size: "430g", price: 3.8 },
-    ],
-  },
 ];
 
 const DELIVERY_DAY_PLACES = {
-  Mardi: ["École", "Mairie", "Parc Vert"],
   Jeudi: ["Mairie", "Gare", "Résidence Bleue"],
 };
 
@@ -77,7 +62,7 @@ const WEEK_DAYS = [
   "Vendredi",
   "Samedi",
 ];
-const CLOSED_ORDER_DATES = ["2025-08-05", "2025-08-07"];
+const CLOSED_ORDER_DATES = [];
 
 function getOrderDays(start, end) {
   let days = [];
