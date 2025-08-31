@@ -345,7 +345,7 @@
                         :class="productIdx % 2 === 0 ? 'bg-blue-100' : 'bg-blue-50'"
                         class="text-blue-900 font-bold px-2 py-2 sticky left-0 z-10"
                       >
-                        {{ product.name }}
+                        {{ product.displayName || product.name }}
                       </td>
                     </template>
                     <td
