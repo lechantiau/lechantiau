@@ -5,7 +5,7 @@ const TABLE_NAME = "lechantiau_simple_orders";
 
 const PRODUCTS = [
   {
-    name: "Campagne Nature",
+    name: "Nature",
     items: [
       { size: "850g", price: 5.2 },
       { size: "430g", price: 2.8 },
@@ -19,7 +19,7 @@ const PRODUCTS = [
     ],
   },
   {
-    name: "Graines de courge",
+    name: "Courge",
     items: [
       { size: "850g", price: 6.2 },
       { size: "430g", price: 3.3 },
@@ -40,7 +40,7 @@ const PRODUCTS = [
     ],
   },
   {
-    name: "Sarrasin-Riz",
+    name: "Sarrasin Riz",
     items: [
       { size: "850g", price: 7.2 },
       { size: "430g", price: 3.8 },
