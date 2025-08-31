@@ -46,6 +46,20 @@ const PRODUCTS = [
       { size: "430g", price: 3.8 },
     ],
   },
+  {
+    name: "Figues",
+    items: [
+      { size: "850g", price: 7.2 },
+      { size: "430g", price: 3.8 },
+    ],
+  },
+  {
+    name: "Seigles",
+    items: [
+      { size: "850g", price: 7.2 },
+      { size: "430g", price: 3.8 },
+    ],
+  },
 ];
 
 const DELIVERY_DAY_PLACES = {

@@ -331,7 +331,7 @@
               </thead>
               <tbody>
                 <template
-                  v-for="(product, productIdx) in PRODUCTS"
+                  v-for="(product, productIdx) in visibleProducts"
                   :key="product.name"
                 >
                   <tr
@@ -421,6 +421,8 @@
       const START_DATE = "2025-08-24"; // 24 Aout 2025
       const END_DATE = "2025-10-18"; // 18 Octobre 2025
 
+      const UNAVAILABLE_PRODUCTS = ["Figues", "Seigles"];
+
       const { createApp, ref, computed } = Vue;
 
       createApp({
@@ -428,6 +430,11 @@
           const supabase = window.supabase.createClient(
             SUPABASE_URL,
             SUPABASE_ANON_KEY
+          );
+
+          const allProducts = ref(PRODUCTS);
+          const visibleProducts = computed(() =>
+            allProducts.value.filter(product => !UNAVAILABLE_PRODUCTS.includes(product.name))
           );
 
           const form = ref({
@@ -439,7 +446,7 @@
               ([key, val]) => [key, ""]
             ),
             orders: getOrderDays(new Date(START_DATE), new Date(END_DATE)).reduce((acc, date) => {
-              acc[date] = PRODUCTS.reduce((obj, product) => {
+              acc[date] = visibleProducts.value.reduce((obj, product) => {
                 obj[product.name] = product.items.reduce((itemObj, item) => {
                   itemObj[item.size] = null; // Initialize quantity to 0
                   return itemObj;
@@ -466,7 +473,7 @@
               for (const productName in form.value.orders[day]) {
                 for (const size in form.value.orders[day][productName]) {
                   const qty = form.value.orders[day][productName][size] || 0;
-                  const item = PRODUCTS.find(
+                  const item = visibleProducts.value.find(
                     (p) => p.name === productName
                   ).items.find((i) => i.size === size);
                   if (item) {
@@ -553,7 +560,7 @@
             cartSum,
             CLOSED_ORDER_DATES,
             WEEK_DAYS,
-            PRODUCTS,
+            visibleProducts,
             DELIVERY_DAY_PLACES,
           };
         },
