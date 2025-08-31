@@ -49,7 +49,7 @@ const PRODUCTS = [
 ];
 
 const DELIVERY_DAY_PLACES = {
-  Jeudi: ["Ecole Joséphine Marchais (réservé aux enseignants)", "SNUipp (réservé aux enseignants)", "Hôte bureau 16h-17h45"],
+  Jeudi: ["Ecole Joséphine Marchais", "SNUipp", "Hôte bureau 16h-17h45"],
 };
 
 const TODAY = new Date().toISOString().slice(0, 10);
