@@ -534,7 +534,7 @@
                 errorMsg.value = "Échec de l'envoi : " + error.message;
               } else {
                 successMsg.value = "Vos commandes ont bien été envoyées !";
-                window.location.href = "/lechantiau/merci.html";
+                window.location.href = `/lechantiau/merci.html?cartSum=${cartSum.value.toFixed(2)}`;
               }
             } catch (e) {
               errorMsg.value = "Erreur inattendue : " + e.message;
