@@ -113,7 +113,8 @@
                   <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Figues</th>
                   <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Seigles</th>
                   <th colspan="3" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Livraison</th>
-                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Commentaires</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Commentaires</th>
+                  <th class="px-2 py-2 border-b text-xs md:text-sm">Actions</th>
                 </tr>
                 <tr>
                   <th class="px-2 py-2 border-b text-xs md:text-sm">Nom</th>
@@ -174,6 +175,14 @@
                   </td>
                   <td class="bg-gray-200 px-2 py-2">{{ order.payment_type }}</td>
                   <td class="px-2 py-2">{{ order.comments }}</td>
+                  <td class="px-2 py-2 text-center">
+                    <button @click="editOrder(order)" class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition">
+                      Modifier
+                    </button>
+                    <button @click="deleteOrder(order.id)" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition ml-2">
+                      Supprimer
+                    </button>
+                  </td>
                 </tr>
                 <!-- Sum row -->
                 <tr class="bg-gray-100 font-bold">
@@ -199,6 +208,7 @@
                   
                   <td colspan="3" class="bg-gray-200 py-2"></td>
                   <td colspan="2" class="py-2"></td>
+                  <td class="py-2"></td>
                 </tr>
               </tbody>
             </table>
@@ -209,6 +219,67 @@
           </div>
           <div v-else-if="!loading" class="text-center text-gray-500 mt-12">Aucune commande à afficher.</div>
         </div>
+      </div>
+    </div>
+    <!-- Modal for editing order -->
+    <div v-if="showModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white rounded shadow p-6 w-full max-w-none">
+        <h2 class="text-xl font-semibold mb-4">Modifier la commande</h2>
+        <form @submit.prevent="saveOrder">
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-1">Nom</label>
+            <input v-model="selectedOrder.name" type="text" required class="w-full border border-gray-300 rounded px-3 py-2">
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-1">Email</label>
+            <input v-model="selectedOrder.email" type="email" required class="w-full border border-gray-300 rounded px-3 py-2">
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-1">Téléphone</label>
+            <input v-model="selectedOrder.phone" type="text" required class="w-full border border-gray-300 rounded px-3 py-2">
+          </div>
+          <!-- Product quantities as a table -->
+          <div class="mb-4">
+            <h3 class="text-gray-700 font-semibold mb-2">Quantités des produits</h3>
+            <table class="w-full border border-gray-300 text-sm">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th colspan="2" v-for="product in PRODUCTS" :key="'th_'+product.name" class="px-2 py-1 border">{{ product.name }}</th>
+                </tr>
+                <tr class="bg-gray-100">
+                  <template v-for="product in PRODUCTS" >
+                    <th v-for="item in product.items" :key="'th_'+product.name+'_'+item.size" class="px-2 py-1 border">{{ item.size }}</th>
+                  </template>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <template v-for="product in PRODUCTS" >
+                      <td
+                        v-for="item in product.items"
+                        :key="'td_'+product.name+'_'+item.size"
+                        class="px-2 py-1 border">
+                        <input
+                          v-model.number="selectedOrder[`${product.name}_${item.size}_qty`]"
+                          type="number"
+                          min="0"
+                          class="w-full border border-gray-300 rounded px-2 py-1"
+                        >
+                      </td>
+                  </template>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex justify-end">
+            <button type="button" @click="showModal = false" class="bg-gray-300 text-gray-800 px-4 py-2 rounded shadow hover:bg-gray-400 transition mr-2">
+              Annuler
+            </button>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition">
+              Enregistrer
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -234,6 +305,9 @@
         const filterName = ref('');
         const filterDate = ref(TODAY);
         const deliveryDates = ref([]);
+
+        const selectedOrder = ref(null);
+        const showModal = ref(false);
 
         // Check for existing session on load
         onMounted(async () => {
@@ -638,6 +712,48 @@
           fetchOrders();
         }
 
+        async function editOrder(order) {
+          selectedOrder.value = { ...order };
+          showModal.value = true;
+        }
+
+        async function saveOrder() {
+          try {
+            const { data, error } = await supabase
+              .from(TABLE_NAME)
+              .update(selectedOrder.value)
+              .eq('id', selectedOrder.value.id);
+
+            if (error) {
+              console.error("Erreur lors de la mise à jour :", error.message);
+            } else {
+              fetchOrders();
+              showModal.value = false;
+            }
+          } catch (e) {
+            console.error("Erreur inattendue :", e.message);
+          }
+        }
+
+        async function deleteOrder(orderId) {
+          if (confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
+            try {
+              const { error } = await supabase
+                .from(TABLE_NAME)
+                .delete()
+                .eq('id', orderId);
+
+              if (error) {
+                console.error("Erreur lors de la suppression :", error.message);
+              } else {
+                fetchOrders();
+              }
+            } catch (e) {
+              console.error("Erreur inattendue :", e.message);
+            }
+          }
+        }
+
         sumByProduct = computed(() => (productName, size) => {
           return orders.value.reduce((sum, order) => {
             return sum + (order[`${productName}_${size}_qty`] || 0);
@@ -679,7 +795,12 @@
           PRODUCTS,
           costOrder,
           sumByProduct,
-          costTotal
+          costTotal,
+          editOrder,
+          deleteOrder,
+          selectedOrder,
+          showModal,
+          saveOrder,
         };
       }
     }).mount('#app');
