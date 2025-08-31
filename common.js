@@ -5,7 +5,7 @@ const TABLE_NAME = "lechantiau_simple_orders";
 
 const PRODUCTS = [
   {
-    name: "Nature",
+    name: "Campagne Nature",
     items: [
       { size: "850g", price: 5.2 },
       { size: "430g", price: 2.8 },
@@ -19,7 +19,7 @@ const PRODUCTS = [
     ],
   },
   {
-    name: "Courge",
+    name: "Graines de courge",
     items: [
       { size: "850g", price: 6.2 },
       { size: "430g", price: 3.3 },
@@ -40,7 +40,7 @@ const PRODUCTS = [
     ],
   },
   {
-    name: "Sarrasin Riz",
+    name: "Sarrasin-Riz",
     items: [
       { size: "850g", price: 7.2 },
       { size: "430g", price: 3.8 },
@@ -49,7 +49,7 @@ const PRODUCTS = [
 ];
 
 const DELIVERY_DAY_PLACES = {
-  Jeudi: ["Mairie", "Gare", "Résidence Bleue"],
+  Jeudi: ["Ecole Joséphine Marchais (reservé aux enseignants)", "SNUipp (réservé aux enseignants)", "Hôte bureau 16h-17h45"],
 };
 
 const TODAY = new Date().toISOString().slice(0, 10);
