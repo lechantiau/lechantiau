@@ -249,7 +249,7 @@
                 <div class="flex flex-col gap-2">
                   <label
                     v-for="place in places"
-                    :key="'delivery_' + day"
+                    :key="'delivery_' + day + '_' + place" //:key="'delivery_' + day" ancien
                     class="inline-flex items-center"
                   >
                     <input
