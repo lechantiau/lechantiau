@@ -83,13 +83,22 @@ const WEEK_DAYS = [
 ];
 const CLOSED_ORDER_DATES = [];
 
-function getOrderDays(start, end) {
+function getDeliveryDay(delivery_place) {
+  for (const [day, places] of Object.entries(DELIVERY_DAY_PLACES)) {
+    if (places.includes(delivery_place)) {
+      return day;
+    }
+  }
+  return null;
+}
+
+function getOrderDays(start, end, delivery_day) {
   let days = [];
   let current = new Date(start);
   while (current <= end) {
     if (
       current >= new Date(TODAY) &&
-      WEEK_DAYS[current.getDay()] in DELIVERY_DAY_PLACES
+      WEEK_DAYS[current.getDay()] == delivery_day
     ) {
       days.push(current.toISOString().slice(0, 10));
     }

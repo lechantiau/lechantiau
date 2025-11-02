@@ -254,9 +254,9 @@
                   >
                     <input
                       type="radio"
-                      :name="'delivery_' + day"
+                      name="delivery_place"
                       :value="place"
-                      v-model="form.delivery_places[day]"
+                      v-model="form.delivery_place"
                       :required="cartSumByWeekday(day) > 0"
                       class="form-radio text-blue-600 h-4 w-4"
                     />
@@ -414,7 +414,7 @@
 
       const UNAVAILABLE_PRODUCTS = ["Seigles"];
 
-      const { createApp, ref, computed } = Vue;
+      const { createApp, ref, computed, watch } = Vue;
 
       createApp({
         setup() {
@@ -433,10 +433,28 @@
             email: "",
             phone: "",
             payment_type: "",
-            delivery_places: Object.entries(DELIVERY_DAY_PLACES).map(
-              ([key, val]) => [key, ""]
-            ),
-            orders: getOrderDays(new Date(START_DATE), new Date(END_DATE)).reduce((acc, date) => {
+            delivery_place: "",
+            orders: {},
+            comments: "",
+          });
+
+          // Watcher for delivery_place changes
+          watch(
+            () => form.value.delivery_place,
+            (newValue, oldValue) => {
+              console.log("Delivery place changed from:", oldValue, "to:", newValue);
+              if (getDeliveryDay(newValue) !== getDeliveryDay(oldValue)) {
+                resetOrders(newValue);
+              }
+            }
+          );
+
+          const loading = ref(false);
+          const successMsg = ref("");
+          const errorMsg = ref("");
+
+          async function resetOrders(delivery_place) {
+            form.value.orders = getOrderDays(new Date(START_DATE), new Date(END_DATE), getDeliveryDay(delivery_place)).reduce((acc, date) => {
               acc[date] = visibleProducts.value.reduce((obj, product) => {
                 obj[product.name] = product.items.reduce((itemObj, item) => {
                   itemObj[item.size] = null; // Initialize quantity to 0
@@ -445,15 +463,8 @@
                 return obj;
               }, {});
               return acc;
-            }, {}),
-            comments: "",
-          });
-
-          console.log(form.orders);
-
-          const loading = ref(false);
-          const successMsg = ref("");
-          const errorMsg = ref("");
+            }, {})
+          }
 
           const cartSumByWeekday = computed(() => (weekday) => {
             let sum = 0;
@@ -502,10 +513,7 @@
                   payment_type: form.value.payment_type,
                   comments: form.value.comments,
                   delivery_date: date,
-                  delivery_place:
-                    form.value.delivery_places[
-                      WEEK_DAYS[new Date(date).getDay()]
-                    ] || "",
+                  delivery_place: form.value.delivery_place,
                 };
                 delivery_qty = 0;
                 for (const productName in form.value.orders[date]) {
