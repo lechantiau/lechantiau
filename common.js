@@ -51,6 +51,7 @@ const PRODUCTS = [
   },
   {
     name: "Figues",
+    displayName: "Châtaigne",
     items: [
       { size: "850g", price: 7.2 },
       { size: "430g", price: 3.8 },
@@ -58,7 +59,6 @@ const PRODUCTS = [
   },
   {
     name: "Seigles",
-    displayName: "Châtaigne",
     items: [
       { size: "850g", price: 7.2 },
       { size: "430g", price: 3.8 },
