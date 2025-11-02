@@ -67,7 +67,7 @@ const PRODUCTS = [
 ];
 
 const DELIVERY_DAY_PLACES = {
-  Mardi: ["Le hangar de Les Temps d'arts"],
+  Mardi: ["Le hangar de Les Temps d'arts 17h-19h"],
   Jeudi: ["Ecole Joséphine Marchais (réservé aux professeurs)", "Villiersfins 17h-18h", "Hôte bureau 16h-17h45"],
 };
 
