@@ -112,6 +112,7 @@
                   <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Sarrasin Riz</th>
                   <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Figues</th>
                   <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Seigles</th>
+                  <th colspan="2" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Saison</th>
                   <th colspan="3" class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Livraison</th>
                   <th class="px-2 py-2 border-b text-xs md:text-sm text-center bg-gray-200">Commentaires</th>
                   <th class="px-2 py-2 border-b text-xs md:text-sm">Actions</th>
@@ -423,14 +424,14 @@
           masse_paton_kg_row_nb = 2+orders.value.length+5;
           qty_det_row_nb = 2+orders.value.length+6;
           rows = [
-            [{f: 'COUNTIF(A3:A'+(2+orders.value.length)+',"<>0")'}, filterDate.value, 'Nature', '', '', '', '', 'Multigraine', '', '', '', '', 'Courge', '', '', '', '', 'Cacao', '', '', '', '', 'Petit Epeautre', '', '', '', '', 'Sarrasin Riz', '', '', '', '', 'Figues', '', '', '', '', 'Seigles', '', '', '', ''],
-            [{f: "A"+price_row_nb+"/A1"}, 'Client', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '430g', '', '210g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', ''],
+            [{f: 'COUNTIF(A3:A'+(2+orders.value.length)+',"<>0")'}, filterDate.value, 'Nature', '', '', '', '', 'Multigraine', '', '', '', '', 'Courge', '', '', '', '', 'Cacao', '', '', '', '', 'Petit Epeautre', '', '', '', '', 'Sarrasin Riz', '', '', '', '', 'Figues', '', '', '', '', 'Seigles', '', '', '', '', 'Saison', '', '', '', ''],
+            [{f: "A"+price_row_nb+"/A1"}, 'Client', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '430g', '', '210g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', '', '850g', '', '430g', '', ''],
           ]
           for (const order in orders.value) {
             order_row_nb = 2 + parseInt(order) + 1;
             const orderData = orders.value[order];
             rows.push([
-              {f: "SUMPRODUCT(C"+order_row_nb+":AO"+order_row_nb+",C$"+price_row_nb+":AO$"+price_row_nb+")"},
+              {f: "SUMPRODUCT(C"+order_row_nb+":AT"+order_row_nb+",C$"+price_row_nb+":AT$"+price_row_nb+")"},
               // {v: orderData.name, c: orderData.comments ? [{ a: orderData.name, t: orderData.comments }] : []},
               orderData.name,
               orderData.Nature_850g_qty > 0 ? orderData.Nature_850g_qty : '', '',
@@ -446,13 +447,15 @@
               orderData['Sarrasin Riz_850g_qty'] > 0 ? orderData['Sarrasin Riz_850g_qty'] : '', '',
               orderData['Sarrasin Riz_430g_qty'] > 0 ? orderData['Sarrasin Riz_430g_qty'] : '', '','', 
               orderData.Figues_850g_qty > 0 ? orderData.Figues_850g_qty : '', '',
-              orderData.Figues_430g_qty > 0 ? orderData.Figues_430g_qty : '', '','', 
+              orderData.Figues_430g_qty > 0 ? orderData.Figues_430g_qty : '', '','',
               orderData.Seigles_850g_qty > 0 ? orderData.Seigles_850g_qty : '', '',
               orderData.Seigles_430g_qty > 0 ? orderData.Seigles_430g_qty : '', '','',
+              orderData.Season_850g_qty > 0 ? orderData.Season_850g_qty : '', '',
+              orderData.Season_430g_qty > 0 ? orderData.Season_430g_qty : '', '','',
             ]);
           }
           rows.push([
-            {f: "SUMPRODUCT(C"+qty_rab_row_nb+":AO"+qty_rab_row_nb+",C$"+price_row_nb+":AO$"+price_row_nb+")"},
+            {f: "SUMPRODUCT(C"+qty_rab_row_nb+":AT"+qty_rab_row_nb+",C$"+price_row_nb+":AT$"+price_row_nb+")"},
             'RAB',
               1, '',
               1, '','', 
@@ -467,17 +470,19 @@
               1, '',
               1, '','', 
               1, '',
-              1, '','', 
+              1, '','',
+              1, '',
+              1, '','',
               1, '',
               1, '','',
           ]);
           rows.push([
             '',
             'Kg pate RAB',
-            {f: "SUMPRODUCT(C"+qty_rab_row_nb+":AO"+qty_rab_row_nb+",C"+masse_paton_kg_row_nb+":AO"+masse_paton_kg_row_nb+")"},
+            {f: "SUMPRODUCT(C"+qty_rab_row_nb+":AT"+qty_rab_row_nb+",C"+masse_paton_kg_row_nb+":AT"+masse_paton_kg_row_nb+")"},
           ]);
           rows.push(
-            ['', 'Type de pain', 'Nature', '', '', '', '', 'Multigraine', '', '', '', '', 'Courge', '', '', '', '', 'Cacao', '', '', '', '', 'Petit Epeautre', '', '', '', '', 'Sarrasin Riz', '', '', '', '', 'Figues', '', '', '', '', 'Seigles', '', '', '', ''],
+            ['', 'Type de pain', 'Nature', '', '', '', '', 'Multigraine', '', '', '', '', 'Courge', '', '', '', '', 'Cacao', '', '', '', '', 'Petit Epeautre', '', '', '', '', 'Sarrasin Riz', '', '', '', '', 'Figues', '', '', '', '', 'Seigles', '', '', '', '', 'Saison', '', '', '', ''],
           )
           rows.push([
             {f: "A"+qty_det_row_nb+"-A"+qty_rab_row_nb},
@@ -498,6 +503,8 @@
             PRODUCTS.find( (p) => p.name === "Figues" ).items.find((i) => i.size === "430g").price, '','', 
             PRODUCTS.find( (p) => p.name === "Seigles" ).items.find((i) => i.size === "850g").price, '',
             PRODUCTS.find( (p) => p.name === "Seigles" ).items.find((i) => i.size === "430g").price, '','',
+            PRODUCTS.find( (p) => p.name === "Season" ).items.find((i) => i.size === "850g").price, '',
+            PRODUCTS.find( (p) => p.name === "Season" ).items.find((i) => i.size === "430g").price, '','',
           ]);
           rows.push([
             {f: "(A"+qty_det_row_nb+"+A"+price_row_nb+")/2"},
@@ -515,12 +522,14 @@
               1, '',
               0.5, '','', 
               1, '',
-              0.5, '','', 
+              0.5, '','',
+              1, '',
+              0.5, '','',
               1, '',
               0.5, '','',
           ]);
           rows.push([
-            {f: "SUMPRODUCT(C"+qty_det_row_nb+":AO"+qty_det_row_nb+",C$"+price_row_nb+":AO$"+price_row_nb+")"},
+            {f: "SUMPRODUCT(C"+qty_det_row_nb+":AT"+qty_det_row_nb+",C$"+price_row_nb+":AT$"+price_row_nb+")"},
             'Qté DET',
             {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 2})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 2})+")"}, '',
             {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 4})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 4})+")"}, '','', 
@@ -535,9 +544,11 @@
             {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 27})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 27})+")"}, '',
             {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 29})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 29})+")"}, '','', 
             {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 32})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 32})+")"}, '',
-            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 34})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 34})+")"}, '','', 
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 34})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 34})+")"}, '','',
             {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 37})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 37})+")"}, '',
             {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 39})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 39})+")"}, '','',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 42})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 42})+")"}, '',
+            {f: "SUM("+XLSX.utils.encode_cell({r: 2, c: 44})+":"+XLSX.utils.encode_cell({r: 2+orders.value.length-1+1, c: 44})+")"}, '','',
           ]);
           rows.push([
             '',
@@ -548,13 +559,14 @@
             {f: "SUMPRODUCT(R"+qty_det_row_nb+":U"+qty_det_row_nb+",R"+masse_paton_kg_row_nb+":U"+masse_paton_kg_row_nb+")"}, '', '', '','', 
             {f: "SUMPRODUCT(W"+qty_det_row_nb+":Z"+qty_det_row_nb+",W"+masse_paton_kg_row_nb+":Z"+masse_paton_kg_row_nb+")"}, '', '', '','', 
             {f: "SUMPRODUCT(AB"+qty_det_row_nb+":AE"+qty_det_row_nb+",AB"+masse_paton_kg_row_nb+":AE"+masse_paton_kg_row_nb+")"}, '', '', '','', 
-            {f: "SUMPRODUCT(AG"+qty_det_row_nb+":AJ"+qty_det_row_nb+",AG"+masse_paton_kg_row_nb+":AJ"+masse_paton_kg_row_nb+")"}, '', '', '','', 
-            {f: "SUMPRODUCT(AL"+qty_det_row_nb+":AO"+qty_det_row_nb+",AL"+masse_paton_kg_row_nb+":AO"+masse_paton_kg_row_nb+")"}, '', '', '','', 
+            {f: "SUMPRODUCT(AG"+qty_det_row_nb+":AJ"+qty_det_row_nb+",AG"+masse_paton_kg_row_nb+":AJ"+masse_paton_kg_row_nb+")"}, '', '', '','',
+            {f: "SUMPRODUCT(AL"+qty_det_row_nb+":AO"+qty_det_row_nb+",AL"+masse_paton_kg_row_nb+":AO"+masse_paton_kg_row_nb+")"}, '', '', '','',
+            {f: "SUMPRODUCT(AQ"+qty_det_row_nb+":AT"+qty_det_row_nb+",AQ"+masse_paton_kg_row_nb+":AT"+masse_paton_kg_row_nb+")"}, '', '', '','',
           ]);
           rows.push([
             '',
             'Kg pate to',
-            {f: "SUMPRODUCT(C"+qty_det_row_nb+":AO"+qty_det_row_nb+",C"+masse_paton_kg_row_nb+":AO"+masse_paton_kg_row_nb+")"},
+            {f: "SUMPRODUCT(C"+qty_det_row_nb+":AT"+qty_det_row_nb+",C"+masse_paton_kg_row_nb+":AT"+masse_paton_kg_row_nb+")"},
           ]);
           const ws = XLSX.utils.aoa_to_sheet(rows);
 
@@ -597,6 +609,7 @@
             { s: { r: 0, c: 27 }, e: { r: 0, c: 30 } },
             { s: { r: 0, c: 32 }, e: { r: 0, c: 35 } },
             { s: { r: 0, c: 37 }, e: { r: 0, c: 40 } },
+            { s: { r: 0, c: 42 }, e: { r: 0, c: 45 } },
             { s: { r: 1, c: 2 }, e: { r: 1, c: 3 } }, { s: { r: 1, c: 4 }, e: { r: 1, c: 5 } },
             { s: { r: 1, c: 7 }, e: { r: 1, c: 8 } }, { s: { r: 1, c: 9 }, e: { r: 1, c: 10 } },
             { s: { r: 1, c: 12 }, e: { r: 1, c: 13 } }, { s: { r: 1, c: 14 }, e: { r: 1, c: 15 } },
@@ -605,6 +618,7 @@
             { s: { r: 1, c: 27 }, e: { r: 1, c: 28 } }, { s: { r: 1, c: 29 }, e: { r: 1, c: 30 } },
             { s: { r: 1, c: 32 }, e: { r: 1, c: 33 } }, { s: { r: 1, c: 34 }, e: { r: 1, c: 35 } },
             { s: { r: 1, c: 37 }, e: { r: 1, c: 38 } }, { s: { r: 1, c: 39 }, e: { r: 1, c: 40 } },
+            { s: { r: 1, c: 42 }, e: { r: 1, c: 43 } }, { s: { r: 1, c: 44 }, e: { r: 1, c: 45 } },
             { s: { r: 2+orders.value.length, c: 2 }, e: { r: 2+orders.value.length, c: 3 } }, { s: { r: 2+orders.value.length, c: 4 }, e: { r: 2+orders.value.length, c: 5 } },
             { s: { r: 2+orders.value.length, c: 7 }, e: { r: 2+orders.value.length, c: 8 } }, { s: { r: 2+orders.value.length, c: 9 }, e: { r: 2+orders.value.length, c: 10 } },
             { s: { r: 2+orders.value.length, c: 12 }, e: { r: 2+orders.value.length, c: 13 } }, { s: { r: 2+orders.value.length, c: 14 }, e: { r: 2+orders.value.length, c: 15 } },
@@ -613,7 +627,8 @@
             { s: { r: 2+orders.value.length, c: 27 }, e: { r: 2+orders.value.length, c: 28 } }, { s: { r: 2+orders.value.length, c: 29 }, e: { r: 2+orders.value.length, c: 30 } },
             { s: { r: 2+orders.value.length, c: 32 }, e: { r: 2+orders.value.length, c: 33 } }, { s: { r: 2+orders.value.length, c: 34 }, e: { r: 2+orders.value.length, c: 35 } },
             { s: { r: 2+orders.value.length, c: 37 }, e: { r: 2+orders.value.length, c: 38 } }, { s: { r: 2+orders.value.length, c: 39 }, e: { r: 2+orders.value.length, c: 40 } },
-            { s: { r: 3+orders.value.length, c: 2 }, e: { r: 3+orders.value.length, c: 40 } },
+            { s: { r: 2+orders.value.length, c: 42 }, e: { r: 2+orders.value.length, c: 43 } }, { s: { r: 2+orders.value.length, c: 44 }, e: { r: 2+orders.value.length, c: 45 } },
+            { s: { r: 3+orders.value.length, c: 2 }, e: { r: 3+orders.value.length, c: 45 } },
             { s: { r: 4+orders.value.length, c: 2 }, e: { r: 4+orders.value.length, c: 5 } },
             { s: { r: 4+orders.value.length, c: 7 }, e: { r: 4+orders.value.length, c: 10 } },
             { s: { r: 4+orders.value.length, c: 12 }, e: { r: 4+orders.value.length, c: 15 } },
@@ -622,6 +637,7 @@
             { s: { r: 4+orders.value.length, c: 27 }, e: { r: 4+orders.value.length, c: 30 } },
             { s: { r: 4+orders.value.length, c: 32 }, e: { r: 4+orders.value.length, c: 35 } },
             { s: { r: 4+orders.value.length, c: 37 }, e: { r: 4+orders.value.length, c: 40 } },
+            { s: { r: 4+orders.value.length, c: 42 }, e: { r: 4+orders.value.length, c: 45 } },
             { s: { r: 5+orders.value.length, c: 2 }, e: { r: 5+orders.value.length, c: 3 } }, { s: { r: 5+orders.value.length, c: 4 }, e: { r: 5+orders.value.length, c: 5 } },
             { s: { r: 5+orders.value.length, c: 7 }, e: { r: 5+orders.value.length, c: 8 } }, { s: { r: 5+orders.value.length, c: 9 }, e: { r: 5+orders.value.length, c: 10 } },
             { s: { r: 5+orders.value.length, c: 12 }, e: { r: 5+orders.value.length, c: 13 } }, { s: { r: 5+orders.value.length, c: 14 }, e: { r: 5+orders.value.length, c: 15 } },
@@ -630,6 +646,7 @@
             { s: { r: 5+orders.value.length, c: 27 }, e: { r: 5+orders.value.length, c: 28 } }, { s: { r: 5+orders.value.length, c: 29 }, e: { r: 5+orders.value.length, c: 30 } },
             { s: { r: 5+orders.value.length, c: 32 }, e: { r: 5+orders.value.length, c: 33 } }, { s: { r: 5+orders.value.length, c: 34 }, e: { r: 5+orders.value.length, c: 35 } },
             { s: { r: 5+orders.value.length, c: 37 }, e: { r: 5+orders.value.length, c: 38 } }, { s: { r: 5+orders.value.length, c: 39 }, e: { r: 5+orders.value.length, c: 40 } },
+            { s: { r: 5+orders.value.length, c: 42 }, e: { r: 5+orders.value.length, c: 43 } }, { s: { r: 5+orders.value.length, c: 44 }, e: { r: 5+orders.value.length, c: 45 } },
             { s: { r: 6+orders.value.length, c: 2 }, e: { r: 6+orders.value.length, c: 3 } }, { s: { r: 6+orders.value.length, c: 4 }, e: { r: 6+orders.value.length, c: 5 } },
             { s: { r: 6+orders.value.length, c: 7 }, e: { r: 6+orders.value.length, c: 8 } }, { s: { r: 6+orders.value.length, c: 9 }, e: { r: 6+orders.value.length, c: 10 } },
             { s: { r: 6+orders.value.length, c: 12 }, e: { r: 6+orders.value.length, c: 13 } }, { s: { r: 6+orders.value.length, c: 14 }, e: { r: 6+orders.value.length, c: 15 } },
@@ -638,6 +655,7 @@
             { s: { r: 6+orders.value.length, c: 27 }, e: { r: 6+orders.value.length, c: 28 } }, { s: { r: 6+orders.value.length, c: 29 }, e: { r: 6+orders.value.length, c: 30 } },
             { s: { r: 6+orders.value.length, c: 32 }, e: { r: 6+orders.value.length, c: 33 } }, { s: { r: 6+orders.value.length, c: 34 }, e: { r: 6+orders.value.length, c: 35 } },
             { s: { r: 6+orders.value.length, c: 37 }, e: { r: 6+orders.value.length, c: 38 } }, { s: { r: 6+orders.value.length, c: 39 }, e: { r: 6+orders.value.length, c: 40 } },
+            { s: { r: 6+orders.value.length, c: 42 }, e: { r: 6+orders.value.length, c: 43 } }, { s: { r: 6+orders.value.length, c: 44 }, e: { r: 6+orders.value.length, c: 45 } },
             { s: { r: 7+orders.value.length, c: 2 }, e: { r: 7+orders.value.length, c: 3 } }, { s: { r: 7+orders.value.length, c: 4 }, e: { r: 7+orders.value.length, c: 5 } },
             { s: { r: 7+orders.value.length, c: 7 }, e: { r: 7+orders.value.length, c: 8 } }, { s: { r: 7+orders.value.length, c: 9 }, e: { r: 7+orders.value.length, c: 10 } },
             { s: { r: 7+orders.value.length, c: 12 }, e: { r: 7+orders.value.length, c: 13 } }, { s: { r: 7+orders.value.length, c: 14 }, e: { r: 7+orders.value.length, c: 15 } },
@@ -646,6 +664,7 @@
             { s: { r: 7+orders.value.length, c: 27 }, e: { r: 7+orders.value.length, c: 28 } }, { s: { r: 7+orders.value.length, c: 29 }, e: { r: 7+orders.value.length, c: 30 } },
             { s: { r: 7+orders.value.length, c: 32 }, e: { r: 7+orders.value.length, c: 33 } }, { s: { r: 7+orders.value.length, c: 34 }, e: { r: 7+orders.value.length, c: 35 } },
             { s: { r: 7+orders.value.length, c: 37 }, e: { r: 7+orders.value.length, c: 38 } }, { s: { r: 7+orders.value.length, c: 39 }, e: { r: 7+orders.value.length, c: 40 } },
+            { s: { r: 7+orders.value.length, c: 42 }, e: { r: 7+orders.value.length, c: 43 } }, { s: { r: 7+orders.value.length, c: 44 }, e: { r: 7+orders.value.length, c: 45 } },
             { s: { r: 8+orders.value.length, c: 2 }, e: { r: 8+orders.value.length, c: 5 } },
             { s: { r: 8+orders.value.length, c: 7 }, e: { r: 8+orders.value.length, c: 10 } },
             { s: { r: 8+orders.value.length, c: 12 }, e: { r: 8+orders.value.length, c: 15 } },
@@ -654,11 +673,17 @@
             { s: { r: 8+orders.value.length, c: 27 }, e: { r: 8+orders.value.length, c: 30 } },
             { s: { r: 8+orders.value.length, c: 32 }, e: { r: 8+orders.value.length, c: 35 } },
             { s: { r: 8+orders.value.length, c: 37 }, e: { r: 8+orders.value.length, c: 40 } },
-            { s: { r: 9+orders.value.length, c: 2 }, e: { r: 9+orders.value.length, c: 40 } },
+            { s: { r: 8+orders.value.length, c: 42 }, e: { r: 8+orders.value.length, c: 45 } },
+            { s: { r: 9+orders.value.length, c: 2 }, e: { r: 9+orders.value.length, c: 45 } },
           ];
           ws['!cols'] = [
           {wch: 10},
           {wch: 15},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 3},
+          {wch: 0.1},
           {wch: 3},
           {wch: 3},
           {wch: 3},
