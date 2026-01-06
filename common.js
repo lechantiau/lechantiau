@@ -65,7 +65,7 @@ const PRODUCTS = [
   },
   {
     name: "Season",
-    displayName: "Châtaigne",
+    displayName: "Complet",
     items: [
       { size: "850g", price: 7.2 },
       { size: "430g", price: 3.8 },
