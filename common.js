@@ -88,7 +88,10 @@ const WEEK_DAYS = [
   "Vendredi",
   "Samedi",
 ];
-const CLOSED_ORDER_DATES = ["2026-02-19"];  // 19 février 2026
+const CLOSED_ORDER_DATES = [
+  "2026-02-17"
+  "2026-02-19",
+];  // 17 et 19 février 2026 vacances
 
 function getDeliveryDay(delivery_place) {
   for (const [day, places] of Object.entries(DELIVERY_DAY_PLACES)) {
