@@ -88,7 +88,7 @@ const WEEK_DAYS = [
   "Vendredi",
   "Samedi",
 ];
-const CLOSED_ORDER_DATES = ["2026-04-16", "2026-04-23", "2026-04-28", "2026-04-30", "2026-05-14", "2026-05-21", "2026-05-28", "2026-06-04"];  //  vacances   "2026-02-17"  "2026-02-19",
+const CLOSED_ORDER_DATES = ["2026-04-16", "2026-04-23", "2026-04-28", "2026-04-30", "2026-05-14", "2026-05-21", "2026-05-28", "2026-06-04", "2026-06-11"];  //  vacances   "2026-02-17"  "2026-02-19",
 
 function getDeliveryDay(delivery_place) {
   for (const [day, places] of Object.entries(DELIVERY_DAY_PLACES)) {
